@@ -10,26 +10,14 @@ import pdfkit
 
 
 ### Configure here: 
-userid = 1 # insert user id here
-OUTPUT = "" # output folder
+userid = -1 # insert user id here
+OUTPUT = "test_assignment" # output folder
 curr_assignment = 'test-spring-2019' # folder name of the current assignment
 
 # folders should be organized as assignment-semester-year/part1/<part1 files>, assignment-semester-year/part2/<part2 files>, etc
 # each part should have an object below
 
 assignment_parts = [
-    {
-        "name": "part1", # will be used for a subfolder
-        "basefiles": [], # add base files (code to be ignored) here, relative path
-        "files": [], # add specific files here, relative path
-        "filesByWildcard": ['test_assignment/**/part1/*.py'] #add files with wildcards here, relative path
-    },
-    {
-        "name": "part2", # will be used for a subfolder
-        "basefiles": [], # add base files (code to be ignored) here, relative path
-        "files": [], # add specific files here, relative path
-        "filesByWildcard": ['test_assignment/**/part2/*.py'] #add files with wildcards here, relative path
-    },
     {
         "name": "part3", # will be used for a subfolder
         "basefiles": [], # add base files (code to be ignored) here, relative path
@@ -65,8 +53,8 @@ def parse_path(file_ref):
 urls = []
 students = {}
 uuids = {}
-if os.path.exists('student-uuids.json'):
-    with open('student-uuids.json', 'r') as f:
+if os.path.exists('{}/student-uuids.json'.format(OUTPUT)):
+    with open('{}/student-uuids.json'.format(OUTPUT), 'r') as f:
         uuids = json.load(f)
 uuid_percents = { a:[] for a in range(100)}
 student_percents = { a:[] for a in range(100)}
@@ -98,6 +86,13 @@ for assignment_part in assignment_parts:
     # m.saveWebPage(url, "mosspy/report.html")
 
     # Download whole report locally including code diff links
+
+    if not os.path.exists(os.path.join(OUTPUT, assignment_part['name'])):
+        try:
+            os.makedirs(os.path.join(OUTPUT, assignment_part['name']))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
     mosspy.download_report(url, "{}/{}".format(OUTPUT, assignment_part['name']), connections=8)
 
     report = "{}/{}/index.html".format(OUTPUT, assignment_part['name'])
@@ -186,26 +181,26 @@ for assignment_part in assignment_parts:
             student_line_refs[line_refs[1]['student']] = []
         student_line_refs[line_refs[1]['student']].append([line_refs[1], line_refs[0]])
 
-with open('student.json', 'w') as outfile:
+with open('{}/student.json'.format(OUTPUT), 'w') as outfile:
     json.dump(students, outfile, indent=4, sort_keys=True)
 
-with open('student-line-refs.json', 'w') as outfile:
-    json.dump(student_line_refs, outfile, indent=4, sort_keys=True)
-
-with open('student-uuids.json', 'w') as outfile:
+with open('{}/student-uuids.json'.format(OUTPUT), 'w') as outfile:
     json.dump(uuids, outfile, indent=4, sort_keys=True)
 
-with open('uuid-percents.json', 'w') as outfile:
+with open('{}/uuid-percents.json'.format(OUTPUT), 'w') as outfile:
     json.dump(uuid_percents, outfile, indent=4, sort_keys=True)
 
-with open('student-percents.json', 'w') as outfile:
+with open('{}/student-percents.json'.format(OUTPUT), 'w') as outfile:
     json.dump(student_percents, outfile, indent=4, sort_keys=True)
 
-with open('uuid-lines.json', 'w') as outfile:
+with open('{}/uuid-lines.json'.format(OUTPUT), 'w') as outfile:
     json.dump(uuid_lines, outfile, indent=4, sort_keys=True)
 
-with open('student-lines.json', 'w') as outfile:
+with open('{}/student-lines.json'.format(OUTPUT), 'w') as outfile:
     json.dump(student_lines, outfile, indent=4, sort_keys=True)
+
+with open('{}/student-line-refs.json'.format(OUTPUT), 'w') as outfile:
+    json.dump(student_line_refs, outfile, indent=4)
 
 for url in urls:
     print("{}: {}".format(url[0], url[1]))
