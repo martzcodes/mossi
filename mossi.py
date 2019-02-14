@@ -12,6 +12,10 @@ import pdfkit
 ### Configure here: 
 userid = 1 # insert user id here
 OUTPUT = "" # output folder
+curr_assignment = 'rr-spring-2019' # folder name of the current assignment
+
+# folders should be organized as assignment-semester-year/part1/<part1 files>, assignment-semester-year/part2/<part2 files>, etc
+# each part should have an object below
 
 assignment_parts = [
     {
