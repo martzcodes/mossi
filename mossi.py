@@ -12,17 +12,35 @@ import pdfkit
 ### Configure here: 
 userid = 1 # insert user id here
 OUTPUT = "" # output folder
-curr_assignment = 'rr-spring-2019' # folder name of the current assignment
+curr_assignment = 'test-spring-2019' # folder name of the current assignment
 
 # folders should be organized as assignment-semester-year/part1/<part1 files>, assignment-semester-year/part2/<part2 files>, etc
 # each part should have an object below
 
 assignment_parts = [
     {
-        "name": "", # will be used for a subfolder
+        "name": "part1", # will be used for a subfolder
         "basefiles": [], # add base files (code to be ignored) here, relative path
         "files": [], # add specific files here, relative path
-        "filesByWildcard": [] #add files with wildcards here, relative path
+        "filesByWildcard": ['test_assignment/**/part1/*.py'] #add files with wildcards here, relative path
+    },
+    {
+        "name": "part2", # will be used for a subfolder
+        "basefiles": [], # add base files (code to be ignored) here, relative path
+        "files": [], # add specific files here, relative path
+        "filesByWildcard": ['test_assignment/**/part2/*.py'] #add files with wildcards here, relative path
+    },
+    {
+        "name": "part3", # will be used for a subfolder
+        "basefiles": [], # add base files (code to be ignored) here, relative path
+        "files": [], # add specific files here, relative path
+        "filesByWildcard": ['test_assignment/**/part3/*.py'] #add files with wildcards here, relative path
+    },
+    {
+        "name": "part4", # will be used for a subfolder
+        "basefiles": [], # add base files (code to be ignored) here, relative path
+        "files": [], # add specific files here, relative path
+        "filesByWildcard": ['test_assignment/**/part4/*.py'] #add files with wildcards here, relative path
     }
 ]
 
@@ -73,6 +91,8 @@ for assignment_part in assignment_parts:
     url = m.send() # Submission Report URL
 
     urls.append((assignment_part['name'], url))
+
+    print("Moss finished {}: {}".format(assignment_part['name'], url))
 
     # Save report file
     # m.saveWebPage(url, "mosspy/report.html")
@@ -165,6 +185,27 @@ for assignment_part in assignment_parts:
         if line_refs[1]['student'] not in student_line_refs:
             student_line_refs[line_refs[1]['student']] = []
         student_line_refs[line_refs[1]['student']].append([line_refs[1], line_refs[0]])
+
+with open('student.json', 'w') as outfile:
+    json.dump(students, outfile, indent=4, sort_keys=True)
+
+with open('student-line-refs.json', 'w') as outfile:
+    json.dump(student_line_refs, outfile, indent=4, sort_keys=True)
+
+with open('student-uuids.json', 'w') as outfile:
+    json.dump(uuids, outfile, indent=4, sort_keys=True)
+
+with open('uuid-percents.json', 'w') as outfile:
+    json.dump(uuid_percents, outfile, indent=4, sort_keys=True)
+
+with open('student-percents.json', 'w') as outfile:
+    json.dump(student_percents, outfile, indent=4, sort_keys=True)
+
+with open('uuid-lines.json', 'w') as outfile:
+    json.dump(uuid_lines, outfile, indent=4, sort_keys=True)
+
+with open('student-lines.json', 'w') as outfile:
+    json.dump(student_lines, outfile, indent=4, sort_keys=True)
 
 for url in urls:
     print("{}: {}".format(url[0], url[1]))
