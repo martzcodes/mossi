@@ -9,7 +9,7 @@ import errno
 import pdfkit
 
 
-### Configure here: 
+### Configure here:
 userid = -1 # insert user id here
 OUTPUT = "test_assignment" # output folder
 curr_assignment = 'test-spring-2019' # folder name of the current assignment
@@ -69,12 +69,12 @@ for assignment_part in assignment_parts:
 
     for base in assignment_part['basefiles']:
         m.addBaseFile(base)
-    
+
     for specific in assignment_part['files']:
         m.addFile(specific)
-    
+
     for wildcard in assignment_part['filesByWildcard']:
-        m.addFilesByWildcard(wildcard)    
+        m.addFilesByWildcard(wildcard)
 
     url = m.send() # Submission Report URL
 
@@ -133,7 +133,7 @@ for assignment_part in assignment_parts:
             if row_students[0]['file'] not in students[row_students[0]['student']]:
                 students[row_students[0]['student']][row_students[0]['file']] = []
             students[row_students[0]['student']][row_students[0]['file']].append({
-                'current':row_students[0]['current'], 
+                'current':row_students[0]['current'],
                 'report': row_students[0]['report'],
                 'match': row_students[0]['match'],
                 'percent': row_students[0]['percent'],
@@ -146,7 +146,7 @@ for assignment_part in assignment_parts:
             if row_students[1]['file'] not in students[row_students[1]['student']]:
                 students[row_students[1]['student']][row_students[1]['file']] = []
             students[row_students[1]['student']][row_students[1]['file']].append({
-                'current':row_students[1]['current'], 
+                'current':row_students[1]['current'],
                 'report': row_students[1]['report'],
                 'match': row_students[1]['match'],
                 'percent': row_students[1]['percent'],
@@ -159,14 +159,14 @@ for assignment_part in assignment_parts:
         for header in soup.find_all(['th']):
             if len(header.text) > 1 and header.find('img') is None:
                 actual_file, student, student_uuid, percent, file_path, current = parse_path(header.string)
-                student_lines = {
+                student_refs = {
                     'student': student,
                     'file_path': header.text.split(' (')[0],
                     'assignment': actual_file.split('_')[-1].split('.py')[0],
                     'percent': percent,
                     'lines': {}
                 }
-                line_refs.append(student_lines)
+                line_refs.append(student_refs)
         for row in soup.find_all('a', href=True):
             if len(row.text) > 0:
                 line_refs[int(row.get('target'))]['lines'][row.get('name')] = {
@@ -176,7 +176,7 @@ for assignment_part in assignment_parts:
         if line_refs[0]['student'] not in student_line_refs:
             student_line_refs[line_refs[0]['student']] = []
         student_line_refs[line_refs[0]['student']].append(line_refs)
-        
+
         if line_refs[1]['student'] not in student_line_refs:
             student_line_refs[line_refs[1]['student']] = []
         student_line_refs[line_refs[1]['student']].append([line_refs[1], line_refs[0]])
