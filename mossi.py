@@ -20,12 +20,14 @@ curr_assignment = 'test-spring-2019' # folder name of the current assignment
 assignment_parts = [
     {
         "name": "part3", # will be used for a subfolder
+        "submission": 1,
         "basefiles": [], # add base files (code to be ignored) here, relative path
         "files": [], # add specific files here, relative path
         "filesByWildcard": ['test_assignment/**/part3/*.py'] #add files with wildcards here, relative path
     },
     {
         "name": "part4", # will be used for a subfolder
+        "submission": 1,
         "basefiles": [], # add base files (code to be ignored) here, relative path
         "files": [], # add specific files here, relative path
         "filesByWildcard": ['test_assignment/**/part4/*.py'] #add files with wildcards here, relative path
@@ -51,7 +53,10 @@ def parse_path(file_ref):
 ### End Configure
 
 urls = []
+pairs = []
+anonpairs = []
 students = {}
+studentsanon = {}
 uuids = {}
 if os.path.exists('{}/student-uuids.json'.format(OUTPUT)):
     with open('{}/student-uuids.json'.format(OUTPUT), 'r') as f:
@@ -65,16 +70,25 @@ student_line_refs = {}
 for assignment_part in assignment_parts:
     m = mosspy.Moss(userid, "python")
 
-    m.setIgnoreLimit(50)
+    m.setIgnoreLimit(250) # basically don't ignore anything
+    m.setNumberOfMatchingFiles(250) # should return 250 results?
 
     for base in assignment_part['basefiles']:
         m.addBaseFile(base)
     
     for specific in assignment_part['files']:
         m.addFile(specific)
-    
+
+    temp_files = []
     for wildcard in assignment_part['filesByWildcard']:
-        m.addFilesByWildcard(wildcard)    
+        print("Uploading: {}".format(wildcard))
+        m.addFilesByWildcard(wildcard)
+
+        for file in glob.glob(wildcard):
+            temp_files.append((file, None))
+
+    print("Files: {}".format(len(temp_files)))
+    del temp_files
 
     url = m.send() # Submission Report URL
 
@@ -87,15 +101,16 @@ for assignment_part in assignment_parts:
 
     # Download whole report locally including code diff links
 
-    if not os.path.exists(os.path.join(OUTPUT, assignment_part['name'])):
+    if not os.path.exists(os.path.join(OUTPUT, assignment_part['name'], "{}".format(assignment_part['submission']))):
         try:
-            os.makedirs(os.path.join(OUTPUT, assignment_part['name']))
+            os.makedirs(os.path.join(OUTPUT, assignment_part['name'], "{}".format(assignment_part['submission'])))
         except OSError as exc: # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
-    mosspy.download_report(url, "{}/{}".format(OUTPUT, assignment_part['name']), connections=8)
+        mosspy.download_report(url, "{}/{}/{}".format(OUTPUT, assignment_part['name'], assignment_part['submission']), connections=8)
 
-    report = "{}/{}/index.html".format(OUTPUT, assignment_part['name'])
+
+    report = "{}/{}/{}/index.html".format(OUTPUT, assignment_part['name'], assignment_part['submission'])
     soup = BeautifulSoup(open(report), 'lxml')
     for row in soup.find_all(['tr']):
         row_students = []
@@ -112,12 +127,12 @@ for assignment_part in assignment_parts:
                     if student not in student_percents[percent]:
                         student_percents[percent].append(student)
                     if line_match not in uuid_lines:
-                        uuid_lines[line_match] = []
-                        student_lines[line_match] = []
-                    if student_uuid not in uuid_lines[line_match]:
-                        uuid_lines[line_match].append(student_uuid)
-                    if student not in student_lines[line_match]:
-                        student_lines[line_match].append(student)
+                        uuid_lines[str(line_match)] = []
+                        student_lines[str(line_match)] = []
+                    if student_uuid not in uuid_lines[str(line_match)]:
+                        uuid_lines[str(line_match)].append(student_uuid)
+                    if student not in student_lines[str(line_match)]:
+                        student_lines[str(line_match)].append(student)
                 row_students.append({
                     'student': student,
                     'file': file_path,
@@ -125,82 +140,141 @@ for assignment_part in assignment_parts:
                     'match': match,
                     'percent': percent,
                     'lines': line_match,
-                    'current': current
+                    'current': current,
+                    'uuid': student_uuid
                 })
         if len(row_students) == 2:
-            if row_students[0]['student'] not in students:
-                students[row_students[0]['student']] = {}
-            if row_students[0]['file'] not in students[row_students[0]['student']]:
-                students[row_students[0]['student']][row_students[0]['file']] = []
-            students[row_students[0]['student']][row_students[0]['file']].append({
-                'current':row_students[0]['current'], 
-                'report': row_students[0]['report'],
-                'match': row_students[0]['match'],
-                'percent': row_students[0]['percent'],
-                'lines': row_students[0]['lines'],
-                'other_student': row_students[1]
-            })
+            if row_students[0]['percent'] > 40 or row_students[1]['percent'] > 40 and row_students[0]['student'] != row_students[1]['student']:
+                pair = [row_students[0]['student'], row_students[1]['student']]
+                pair.sort()
+                if pair not in pairs:
+                    pairs.append(pair)
+                    anonpair = [row_students[0]['uuid'], row_students[1]['uuid']]
+                    anonpair.sort()
+                    anonpairs.append(anonpair)
+            if row_students[0]['student'] != row_students[1]['student']:
+                if row_students[0]['student'] not in students:
+                    students[row_students[0]['student']] = {}
+                if row_students[0]['file'] not in students[row_students[0]['student']]:
+                    students[row_students[0]['student']][row_students[0]['file']] = []
+                students[row_students[0]['student']][row_students[0]['file']].append({
+                    'current':row_students[0]['current'], 
+                    'report': row_students[0]['report'],
+                    'match': row_students[0]['match'],
+                    'percent': row_students[0]['percent'],
+                    'lines': row_students[0]['lines'],
+                    'submission': assignment_part['submission'],
+                    'uuid': row_students[0]['uuid'],
+                    'other_student': row_students[1]
+                })
 
-            if row_students[1]['student'] not in students:
-                students[row_students[1]['student']] = {}
-            if row_students[1]['file'] not in students[row_students[1]['student']]:
-                students[row_students[1]['student']][row_students[1]['file']] = []
-            students[row_students[1]['student']][row_students[1]['file']].append({
-                'current':row_students[1]['current'], 
-                'report': row_students[1]['report'],
-                'match': row_students[1]['match'],
-                'percent': row_students[1]['percent'],
-                'lines': row_students[1]['lines'],
-                'other_student': row_students[0]
-            })
-    for top_path in glob.iglob('{}/{}/match*-top.html'.format(OUTPUT, assignment_part['name']), recursive=True):
+                if row_students[1]['student'] not in students:
+                    students[row_students[1]['student']] = {}
+                if row_students[1]['file'] not in students[row_students[1]['student']]:
+                    students[row_students[1]['student']][row_students[1]['file']] = []
+                students[row_students[1]['student']][row_students[1]['file']].append({
+                    'current':row_students[1]['current'], 
+                    'report': row_students[1]['report'],
+                    'match': row_students[1]['match'],
+                    'percent': row_students[1]['percent'],
+                    'lines': row_students[1]['lines'],
+                    'submission': assignment_part['submission'],
+                    'uuid': row_students[1]['uuid'],
+                    'other_student': row_students[0]
+                })
+            
+            del row_students[0]['student']
+            del row_students[1]['student']
+            if row_students[0]['uuid'] != row_students[1]['uuid']:
+                if row_students[0]['uuid'] not in students:
+                    students[row_students[0]['uuid']] = {}
+                if row_students[0]['file'] not in students[row_students[0]['uuid']]:
+                    students[row_students[0]['uuid']][row_students[0]['file']] = []
+                students[row_students[0]['uuid']][row_students[0]['file']].append({
+                    'current':row_students[0]['current'], 
+                    'report': row_students[0]['report'],
+                    'match': row_students[0]['match'],
+                    'percent': row_students[0]['percent'],
+                    'lines': row_students[0]['lines'],
+                    'submission': assignment_part['submission'],
+                    'uuid': row_students[0]['uuid'],
+                    'other_student': row_students[1]
+                })
+
+                if row_students[1]['uuid'] not in students:
+                    students[row_students[1]['uuid']] = {}
+                if row_students[1]['file'] not in students[row_students[1]['uuid']]:
+                    students[row_students[1]['uuid']][row_students[1]['file']] = []
+                students[row_students[1]['uuid']][row_students[1]['file']].append({
+                    'current':row_students[1]['current'], 
+                    'report': row_students[1]['report'],
+                    'match': row_students[1]['match'],
+                    'percent': row_students[1]['percent'],
+                    'lines': row_students[1]['lines'],
+                    'submission': assignment_part['submission'],
+                    'uuid': row_students[1]['uuid'],
+                    'other_student': row_students[0]
+                })
+    for top_path in glob.iglob('{}/{}/{}/match*-top.html'.format(OUTPUT, assignment_part['name'], assignment_part['submission']), recursive=True):
         soup = BeautifulSoup(open(top_path), 'lxml')
         line_refs = []
         for header in soup.find_all(['th']):
             if len(header.text) > 1 and header.find('img') is None:
                 actual_file, student, student_uuid, percent, file_path, current = parse_path(header.string)
-                student_lines = {
+                student_refs = {
                     'student': student,
                     'file_path': header.text.split(' (')[0],
                     'assignment': actual_file.split('_')[-1].split('.py')[0],
                     'percent': percent,
+                    'submission': assignment_part['submission'],
                     'lines': {}
                 }
-                line_refs.append(student_lines)
-        for row in soup.find_all('a', href=True):
-            if len(row.text) > 0:
-                line_refs[int(row.get('target'))]['lines'][row.get('name')] = {
-                    'from': int(row.text.split('-')[0]),
-                    'to': int(row.text.split('-')[1])
-                }
-        if line_refs[0]['student'] not in student_line_refs:
-            student_line_refs[line_refs[0]['student']] = []
-        student_line_refs[line_refs[0]['student']].append(line_refs)
-        
-        if line_refs[1]['student'] not in student_line_refs:
-            student_line_refs[line_refs[1]['student']] = []
-        student_line_refs[line_refs[1]['student']].append([line_refs[1], line_refs[0]])
+                line_refs.append(student_refs)
+        if line_refs[0]['student'] != line_refs[1]['student']:
+            for row in soup.find_all('a', href=True):
+                if len(row.text) > 0:
+                    line_refs[int(row.get('target'))]['lines'][row.get('name')] = {
+                        'from': int(row.text.split('-')[0]),
+                        'to': int(row.text.split('-')[1])
+                    }
+            if line_refs[0]['student'] not in student_line_refs:
+                student_line_refs[line_refs[0]['student']] = []
+            student_line_refs[line_refs[0]['student']].append(line_refs)
+            
+            if line_refs[1]['student'] not in student_line_refs:
+                student_line_refs[line_refs[1]['student']] = []
+            student_line_refs[line_refs[1]['student']].append([line_refs[1], line_refs[0]])
 
-with open('{}/student.json'.format(OUTPUT), 'w') as outfile:
-    json.dump(students, outfile, indent=4, sort_keys=True)
+    with open('{}/student.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(students, outfile, indent=4, sort_keys=True)
 
-with open('{}/student-uuids.json'.format(OUTPUT), 'w') as outfile:
-    json.dump(uuids, outfile, indent=4, sort_keys=True)
+    with open('{}/student-anon.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(studentsanon, outfile, indent=4, sort_keys=True)
 
-with open('{}/uuid-percents.json'.format(OUTPUT), 'w') as outfile:
-    json.dump(uuid_percents, outfile, indent=4, sort_keys=True)
+    with open('{}/student-uuids.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(uuids, outfile, indent=4, sort_keys=True)
 
-with open('{}/student-percents.json'.format(OUTPUT), 'w') as outfile:
-    json.dump(student_percents, outfile, indent=4, sort_keys=True)
+    with open('{}/uuid-percents.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(uuid_percents, outfile, indent=4, sort_keys=True)
 
-with open('{}/uuid-lines.json'.format(OUTPUT), 'w') as outfile:
-    json.dump(uuid_lines, outfile, indent=4, sort_keys=True)
+    with open('{}/student-percents.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(student_percents, outfile, indent=4, sort_keys=True)
 
-with open('{}/student-lines.json'.format(OUTPUT), 'w') as outfile:
-    json.dump(student_lines, outfile, indent=4, sort_keys=True)
+    with open('{}/uuid-lines.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(uuid_lines, outfile, indent=4, sort_keys=True)
 
-with open('{}/student-line-refs.json'.format(OUTPUT), 'w') as outfile:
-    json.dump(student_line_refs, outfile, indent=4)
+    with open('{}/student-lines.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(student_lines, outfile, indent=4, sort_keys=True)
+
+    with open('{}/student-line-refs.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(student_line_refs, outfile, indent=4)
+    
+    with open('{}/student-pairs.json'.format(OUTPUT), 'w') as outfile:
+        json.dump({"pairs": pairs}, outfile, indent=4, sort_keys=True)
+
+    with open('{}/student-anon-pairs.json'.format(OUTPUT), 'w') as outfile:
+        json.dump({"pairs": anonpairs}, outfile, indent=4, sort_keys=True)
+
 
 for url in urls:
     print("{}: {}".format(url[0], url[1]))
