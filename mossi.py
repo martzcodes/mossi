@@ -47,7 +47,8 @@ def parse_path(file_ref):
     percent = int(actual_file.split("(")[1].split("%")[0])
     file_path = actual_file.split(" (")[0].split(student)[1]
     current = file_ref.find(curr_assignment) != -1
-    return actual_file, student, student_uuid, percent, file_path, current
+    watermark = file_ref.find('watermark') != -1
+    return actual_file, student, student_uuid, percent, file_path, current, watermark
 
 
 ### End Configure
@@ -70,12 +71,12 @@ student_line_refs = {}
 for assignment_part in assignment_parts:
     m = mosspy.Moss(userid, "python")
 
-    m.setIgnoreLimit(250) # basically don't ignore anything
-    m.setNumberOfMatchingFiles(250) # should return 250 results?
+    m.setIgnoreLimit(75)
+    m.setNumberOfMatchingFiles(250) # should return 250 results
 
     for base in assignment_part['basefiles']:
         m.addBaseFile(base)
-
+    
     for specific in assignment_part['files']:
         m.addFile(specific)
 
@@ -119,7 +120,7 @@ for assignment_part in assignment_parts:
             line_match = int(td.string)
         for anchor in row.find_all(['a']):
             if anchor.string.find("/") != -1:
-                actual_file, student, student_uuid, percent, file_path, current = parse_path(anchor.string)
+                actual_file, student, student_uuid, percent, file_path, current, watermark = parse_path(anchor.string)
                 match = anchor.get('href')
                 row_students.append({
                     'student': student,
@@ -129,7 +130,8 @@ for assignment_part in assignment_parts:
                     'percent': percent,
                     'lines': line_match,
                     'current': current,
-                    'uuid': student_uuid
+                    'uuid': student_uuid,
+                    'watermark': watermark
                 })
 
         if len(row_students) == 2:
@@ -191,12 +193,12 @@ for assignment_part in assignment_parts:
             del row_students[0]['student']
             del row_students[1]['student']
             if row_students[0]['uuid'] != row_students[1]['uuid']:
-                if row_students[0]['uuid'] not in students:
-                    students[row_students[0]['uuid']] = {}
-                if row_students[0]['file'] not in students[row_students[0]['uuid']]:
-                    students[row_students[0]['uuid']][row_students[0]['file']] = []
-                students[row_students[0]['uuid']][row_students[0]['file']].append({
-                    'current':row_students[0]['current'],
+                if row_students[0]['uuid'] not in studentsanon:
+                    studentsanon[row_students[0]['uuid']] = {}
+                if row_students[0]['file'] not in studentsanon[row_students[0]['uuid']]:
+                    studentsanon[row_students[0]['uuid']][row_students[0]['file']] = []
+                studentsanon[row_students[0]['uuid']][row_students[0]['file']].append({
+                    'current':row_students[0]['current'], 
                     'report': row_students[0]['report'],
                     'match': row_students[0]['match'],
                     'percent': row_students[0]['percent'],
@@ -205,13 +207,12 @@ for assignment_part in assignment_parts:
                     'uuid': row_students[0]['uuid'],
                     'other_student': row_students[1]
                 })
-
-                if row_students[1]['uuid'] not in students:
-                    students[row_students[1]['uuid']] = {}
-                if row_students[1]['file'] not in students[row_students[1]['uuid']]:
-                    students[row_students[1]['uuid']][row_students[1]['file']] = []
-                students[row_students[1]['uuid']][row_students[1]['file']].append({
-                    'current':row_students[1]['current'],
+                if row_students[1]['uuid'] not in studentsanon:
+                    studentsanon[row_students[1]['uuid']] = {}
+                if row_students[1]['file'] not in studentsanon[row_students[1]['uuid']]:
+                    studentsanon[row_students[1]['uuid']][row_students[1]['file']] = []
+                studentsanon[row_students[1]['uuid']][row_students[1]['file']].append({
+                    'current':row_students[1]['current'], 
                     'report': row_students[1]['report'],
                     'match': row_students[1]['match'],
                     'percent': row_students[1]['percent'],
@@ -225,13 +226,14 @@ for assignment_part in assignment_parts:
         line_refs = []
         for header in soup.find_all(['th']):
             if len(header.text) > 1 and header.find('img') is None:
-                actual_file, student, student_uuid, percent, file_path, current = parse_path(header.string)
+                actual_file, student, student_uuid, percent, file_path, current, watermark = parse_path(header.string)
                 student_refs = {
                     'student': student,
                     'file_path': header.text.split(' (')[0],
                     'assignment': actual_file.split('_')[-1].split('.py')[0],
                     'percent': percent,
                     'submission': assignment_part['submission'],
+                    'watermark': watermark,
                     'lines': {}
                 }
                 line_refs.append(student_refs)
