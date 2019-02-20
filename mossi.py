@@ -121,18 +121,6 @@ for assignment_part in assignment_parts:
             if anchor.string.find("/") != -1:
                 actual_file, student, student_uuid, percent, file_path, current = parse_path(anchor.string)
                 match = anchor.get('href')
-                if current:
-                    if student_uuid not in uuid_percents[percent]:
-                        uuid_percents[percent].append(student_uuid)
-                    if student not in student_percents[percent]:
-                        student_percents[percent].append(student)
-                    if line_match not in uuid_lines:
-                        uuid_lines[str(line_match)] = []
-                        student_lines[str(line_match)] = []
-                    if student_uuid not in uuid_lines[str(line_match)]:
-                        uuid_lines[str(line_match)].append(student_uuid)
-                    if student not in student_lines[str(line_match)]:
-                        student_lines[str(line_match)].append(student)
                 row_students.append({
                     'student': student,
                     'file': file_path,
@@ -143,8 +131,9 @@ for assignment_part in assignment_parts:
                     'current': current,
                     'uuid': student_uuid
                 })
+
         if len(row_students) == 2:
-            if row_students[0]['percent'] > 40 or row_students[1]['percent'] > 40 and row_students[0]['student'] != row_students[1]['student']:
+            if (row_students[0]['percent'] > 40 or row_students[1]['percent'] > 40) and row_students[0]['student'] != row_students[1]['student']:
                 pair = [row_students[0]['student'], row_students[1]['student']]
                 pair.sort()
                 if pair not in pairs:
@@ -152,13 +141,29 @@ for assignment_part in assignment_parts:
                     anonpair = [row_students[0]['uuid'], row_students[1]['uuid']]
                     anonpair.sort()
                     anonpairs.append(anonpair)
+
             if row_students[0]['student'] != row_students[1]['student']:
+                for row_student in row_students:
+                    current, percent, student_uuid, student, line_match = row_student['current'], row_student['percent'], row_student['uuid'], row_student['student'], row_student['lines']
+                    if current:
+                        if student_uuid not in uuid_percents[percent]:
+                            uuid_percents[percent].append(student_uuid)
+                        if student not in student_percents[percent]:
+                            student_percents[percent].append(student)
+                        if line_match not in uuid_lines:
+                            uuid_lines[line_match] = []
+                            student_lines[line_match] = []
+                        if student_uuid not in uuid_lines[line_match]:
+                            uuid_lines[line_match].append(student_uuid)
+                        if student not in student_lines[line_match]:
+                            student_lines[line_match].append(student)
+
                 if row_students[0]['student'] not in students:
                     students[row_students[0]['student']] = {}
                 if row_students[0]['file'] not in students[row_students[0]['student']]:
                     students[row_students[0]['student']][row_students[0]['file']] = []
                 students[row_students[0]['student']][row_students[0]['file']].append({
-                    'current':row_students[0]['current'], 
+                    'current':row_students[0]['current'],
                     'report': row_students[0]['report'],
                     'match': row_students[0]['match'],
                     'percent': row_students[0]['percent'],
@@ -173,7 +178,7 @@ for assignment_part in assignment_parts:
                 if row_students[1]['file'] not in students[row_students[1]['student']]:
                     students[row_students[1]['student']][row_students[1]['file']] = []
                 students[row_students[1]['student']][row_students[1]['file']].append({
-                    'current':row_students[1]['current'], 
+                    'current':row_students[1]['current'],
                     'report': row_students[1]['report'],
                     'match': row_students[1]['match'],
                     'percent': row_students[1]['percent'],
@@ -182,7 +187,7 @@ for assignment_part in assignment_parts:
                     'uuid': row_students[1]['uuid'],
                     'other_student': row_students[0]
                 })
-            
+
             del row_students[0]['student']
             del row_students[1]['student']
             if row_students[0]['uuid'] != row_students[1]['uuid']:
@@ -191,7 +196,7 @@ for assignment_part in assignment_parts:
                 if row_students[0]['file'] not in students[row_students[0]['uuid']]:
                     students[row_students[0]['uuid']][row_students[0]['file']] = []
                 students[row_students[0]['uuid']][row_students[0]['file']].append({
-                    'current':row_students[0]['current'], 
+                    'current':row_students[0]['current'],
                     'report': row_students[0]['report'],
                     'match': row_students[0]['match'],
                     'percent': row_students[0]['percent'],
@@ -206,7 +211,7 @@ for assignment_part in assignment_parts:
                 if row_students[1]['file'] not in students[row_students[1]['uuid']]:
                     students[row_students[1]['uuid']][row_students[1]['file']] = []
                 students[row_students[1]['uuid']][row_students[1]['file']].append({
-                    'current':row_students[1]['current'], 
+                    'current':row_students[1]['current'],
                     'report': row_students[1]['report'],
                     'match': row_students[1]['match'],
                     'percent': row_students[1]['percent'],
@@ -240,7 +245,7 @@ for assignment_part in assignment_parts:
             if line_refs[0]['student'] not in student_line_refs:
                 student_line_refs[line_refs[0]['student']] = []
             student_line_refs[line_refs[0]['student']].append(line_refs)
-            
+
             if line_refs[1]['student'] not in student_line_refs:
                 student_line_refs[line_refs[1]['student']] = []
             student_line_refs[line_refs[1]['student']].append([line_refs[1], line_refs[0]])
@@ -268,7 +273,7 @@ for assignment_part in assignment_parts:
 
     with open('{}/student-line-refs.json'.format(OUTPUT), 'w') as outfile:
         json.dump(student_line_refs, outfile, indent=4)
-    
+
     with open('{}/student-pairs.json'.format(OUTPUT), 'w') as outfile:
         json.dump({"pairs": pairs}, outfile, indent=4, sort_keys=True)
 
