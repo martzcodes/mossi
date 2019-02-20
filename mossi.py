@@ -9,7 +9,7 @@ import errno
 import pdfkit
 
 
-### Configure here: 
+### Configure here:
 userid = -1 # insert user id here
 OUTPUT = "test_assignment" # output folder
 curr_assignment = 'test-spring-2019' # folder name of the current assignment
@@ -75,7 +75,7 @@ for assignment_part in assignment_parts:
 
     for base in assignment_part['basefiles']:
         m.addBaseFile(base)
-    
+
     for specific in assignment_part['files']:
         m.addFile(specific)
 
