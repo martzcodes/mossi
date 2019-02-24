@@ -7,7 +7,7 @@ import json
 import uuid
 import errno
 import pdfkit
-
+from graph_functions import find_student_groups
 
 ### Configure here:
 userid = -1 # insert user id here
@@ -76,7 +76,7 @@ for assignment_part in assignment_parts:
 
     for base in assignment_part['basefiles']:
         m.addBaseFile(base)
-    
+
     for specific in assignment_part['files']:
         m.addFile(specific)
 
@@ -198,7 +198,7 @@ for assignment_part in assignment_parts:
                 if row_students[0]['file'] not in studentsanon[row_students[0]['uuid']]:
                     studentsanon[row_students[0]['uuid']][row_students[0]['file']] = []
                 studentsanon[row_students[0]['uuid']][row_students[0]['file']].append({
-                    'current':row_students[0]['current'], 
+                    'current':row_students[0]['current'],
                     'report': row_students[0]['report'],
                     'match': row_students[0]['match'],
                     'percent': row_students[0]['percent'],
@@ -212,7 +212,7 @@ for assignment_part in assignment_parts:
                 if row_students[1]['file'] not in studentsanon[row_students[1]['uuid']]:
                     studentsanon[row_students[1]['uuid']][row_students[1]['file']] = []
                 studentsanon[row_students[1]['uuid']][row_students[1]['file']].append({
-                    'current':row_students[1]['current'], 
+                    'current':row_students[1]['current'],
                     'report': row_students[1]['report'],
                     'match': row_students[1]['match'],
                     'percent': row_students[1]['percent'],
@@ -281,6 +281,10 @@ for assignment_part in assignment_parts:
 
     with open('{}/student-anon-pairs.json'.format(OUTPUT), 'w') as outfile:
         json.dump({"pairs": anonpairs}, outfile, indent=4, sort_keys=True)
+
+    with open('{}/student-anon-groups.json'.format(OUTPUT), 'w') as outfile:
+        out_dict = find_student_groups(anonpairs)
+        json.dump(out_dict, outfile, indent=4, sort_keys=True)
 
 
 for url in urls:
