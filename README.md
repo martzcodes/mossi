@@ -10,6 +10,8 @@ My computer was all over the place when I wrote these... so I don't have a speci
 
 `pip install pdfkit`
 
+`pip install networkx`
+
 Install https://wkhtmltopdf.org/
 
 ## Step 1: Prep
