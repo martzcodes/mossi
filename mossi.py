@@ -7,7 +7,7 @@ import json
 import uuid
 import errno
 import pdfkit
-from graph_functions import find_student_groups
+from graph_functions import find_student_groups, find_multistudent_collaborations
 
 ### Configure here:
 userid = -1 # insert user id here
@@ -285,6 +285,11 @@ for assignment_part in assignment_parts:
     with open('{}/student-anon-groups.json'.format(OUTPUT), 'w') as outfile:
         out_dict = find_student_groups(anonpairs)
         json.dump(out_dict, outfile, indent=4, sort_keys=True)
+    with open('{}/multi-student-collaborations.json'.format(OUTPUT), 'w') as outfile:
+        out_dict = find_multistudent_collaborations(student_line_refs)
+        json.dump(out_dict, outfile, indent=4, sort_keys=True)
+
+
 
 
 for url in urls:
