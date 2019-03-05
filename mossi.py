@@ -9,10 +9,10 @@ import errno
 import pdfkit
 from graph_functions import find_student_groups, find_multistudent_collaborations
 
-### Configure here:
+### Configure here: 
 userid = -1 # insert user id here
-OUTPUT = "test_assignment" # output folder
-curr_assignment = 'test-spring-2019' # folder name of the current assignment
+OUTPUT = "polygonrobot" # output folder
+curr_assignment = 'spring-2019' # folder name of the current assignment
 
 # folders should be organized as assignment-semester-year/part1/<part1 files>, assignment-semester-year/part2/<part2 files>, etc
 # each part should have an object below
@@ -48,11 +48,12 @@ def parse_path(file_ref):
     file_path = actual_file.split(" (")[0].split(student)[1]
     current = file_ref.find(curr_assignment) != -1
     watermark = file_ref.find('watermark') != -1
-    return actual_file, student, student_uuid, percent, file_path, current, watermark
+    return actual_file, student.lower(), student_uuid, percent, file_path, current, watermark
 
 
 ### End Configure
 
+moss_urls = {}
 urls = []
 pairs = []
 anonpairs = []
@@ -67,6 +68,7 @@ student_percents = { a:[] for a in range(100)}
 uuid_lines = {}
 student_lines = {}
 student_line_refs = {}
+anon_line_refs = {}
 
 for assignment_part in assignment_parts:
     m = mosspy.Moss(userid, "python")
@@ -76,7 +78,7 @@ for assignment_part in assignment_parts:
 
     for base in assignment_part['basefiles']:
         m.addBaseFile(base)
-
+    
     for specific in assignment_part['files']:
         m.addFile(specific)
 
@@ -96,6 +98,10 @@ for assignment_part in assignment_parts:
     urls.append((assignment_part['name'], url))
 
     print("Moss finished {}: {}".format(assignment_part['name'], url))
+
+    if assignment_part['name'] not in moss_urls:
+        moss_urls[assignment_part['name']] = {}
+    moss_urls[assignment_part['name']][assignment_part['sub{}'.format(assignment_part['submission'])]] = url
 
     # Save report file
     # m.saveWebPage(url, "mosspy/report.html")
@@ -166,6 +172,7 @@ for assignment_part in assignment_parts:
                     students[row_students[0]['student']][row_students[0]['file']] = []
                 students[row_students[0]['student']][row_students[0]['file']].append({
                     'current':row_students[0]['current'],
+                    'assignment': assignment_part['name'],
                     'report': row_students[0]['report'],
                     'match': row_students[0]['match'],
                     'percent': row_students[0]['percent'],
@@ -181,6 +188,7 @@ for assignment_part in assignment_parts:
                     students[row_students[1]['student']][row_students[1]['file']] = []
                 students[row_students[1]['student']][row_students[1]['file']].append({
                     'current':row_students[1]['current'],
+                    'assignment': assignment_part['name'],
                     'report': row_students[1]['report'],
                     'match': row_students[1]['match'],
                     'percent': row_students[1]['percent'],
@@ -198,7 +206,8 @@ for assignment_part in assignment_parts:
                 if row_students[0]['file'] not in studentsanon[row_students[0]['uuid']]:
                     studentsanon[row_students[0]['uuid']][row_students[0]['file']] = []
                 studentsanon[row_students[0]['uuid']][row_students[0]['file']].append({
-                    'current':row_students[0]['current'],
+                    'current':row_students[0]['current'], 
+                    'assignment': assignment_part['name'],
                     'report': row_students[0]['report'],
                     'match': row_students[0]['match'],
                     'percent': row_students[0]['percent'],
@@ -212,7 +221,8 @@ for assignment_part in assignment_parts:
                 if row_students[1]['file'] not in studentsanon[row_students[1]['uuid']]:
                     studentsanon[row_students[1]['uuid']][row_students[1]['file']] = []
                 studentsanon[row_students[1]['uuid']][row_students[1]['file']].append({
-                    'current':row_students[1]['current'],
+                    'current':row_students[1]['current'], 
+                    'assignment': assignment_part['name'],
                     'report': row_students[1]['report'],
                     'match': row_students[1]['match'],
                     'percent': row_students[1]['percent'],
@@ -229,6 +239,7 @@ for assignment_part in assignment_parts:
                 actual_file, student, student_uuid, percent, file_path, current, watermark = parse_path(header.string)
                 student_refs = {
                     'student': student,
+                    'uuid': student_uuid,
                     'file_path': header.text.split(' (')[0],
                     'assignment': actual_file.split('_')[-1].split('.py')[0],
                     'percent': percent,
@@ -251,6 +262,20 @@ for assignment_part in assignment_parts:
             if line_refs[1]['student'] not in student_line_refs:
                 student_line_refs[line_refs[1]['student']] = []
             student_line_refs[line_refs[1]['student']].append([line_refs[1], line_refs[0]])
+
+        del line_refs[0]['student']
+        del line_refs[0]['file_path']
+        del line_refs[1]['student']
+        del line_refs[1]['file_path']
+
+        if line_refs[0]['uuid'] != line_refs[1]['uuid']:
+            if line_refs[0]['uuid'] not in anon_line_refs:
+                anon_line_refs[line_refs[0]['uuid']] = []
+            anon_line_refs[line_refs[0]['uuid']].append(line_refs)
+
+            if line_refs[1]['uuid'] not in anon_line_refs:
+                anon_line_refs[line_refs[1]['uuid']] = []
+            anon_line_refs[line_refs[1]['uuid']].append([line_refs[1], line_refs[0]])
 
     with open('{}/student.json'.format(OUTPUT), 'w') as outfile:
         json.dump(students, outfile, indent=4, sort_keys=True)
@@ -281,15 +306,20 @@ for assignment_part in assignment_parts:
 
     with open('{}/student-anon-pairs.json'.format(OUTPUT), 'w') as outfile:
         json.dump({"pairs": anonpairs}, outfile, indent=4, sort_keys=True)
+    
+    with open('{}/moss-urls.json'.format(OUTPUT), 'w') as outfile:
+        json.dump(moss_urls, outfile, indent=4, sort_keys=True)
+    
+    with open('./polygonrobot/anon-line-refs.json', 'w') as outfile:
+        json.dump(anon_line_refs, outfile, indent=4, sort_keys=True)
 
     with open('{}/student-anon-groups.json'.format(OUTPUT), 'w') as outfile:
         out_dict = find_student_groups(anonpairs)
         json.dump(out_dict, outfile, indent=4, sort_keys=True)
+
     with open('{}/multi-student-collaborations.json'.format(OUTPUT), 'w') as outfile:
         out_dict = find_multistudent_collaborations(student_line_refs)
         json.dump(out_dict, outfile, indent=4, sort_keys=True)
-
-
 
 
 for url in urls:

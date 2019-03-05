@@ -3,8 +3,8 @@ import os
 import sys
 
 assignment = sys.argv[1]
-dir_name = "{}/{}".format(assignment, sys.argv[2])
-output_dir = "{}/{}".format(assignment, sys.argv[3])
+dir_name = sys.argv[2]
+output_dir = sys.argv[3]
 
 assignment = "-{}-".format(assignment)
 
