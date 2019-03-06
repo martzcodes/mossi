@@ -1,4 +1,6 @@
 test_assignment
-ai4r
+ai4r*
 ai
 .vscode
+temp.py
+__pycache__

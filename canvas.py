@@ -15,7 +15,7 @@ for path, dir_list, file_list in os.walk(dir_name):
             if not cleaned_file_name.endswith('.py'):
                 cleaned_file_name += '.py'
             folder_name = file_name.split("-")[0].split("_")[-1].split(".py")[0]
-            new_path = os.path.join(output_dir, folder_name, 'canvas', cleaned_file_name)
-            if not os.path.exists(os.path.join(output_dir, folder_name, 'canvas')):
-                os.makedirs(os.path.join(output_dir, folder_name, 'canvas'))
+            new_path = os.path.join(output_dir, folder_name, 'sub4', cleaned_file_name)
+            if not os.path.exists(os.path.join(output_dir, folder_name, 'sub4')):
+                os.makedirs(os.path.join(output_dir, folder_name, 'sub4'))
             copyfile(abs_file_path, new_path)

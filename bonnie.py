@@ -1,23 +1,34 @@
 import zipfile
 import os
 import sys
+import uuid
+import json
 
-assignment = sys.argv[1]
-dir_name = sys.argv[2]
-output_dir = sys.argv[3]
+# python bonnie.py assignment_2 ai/a2-anon ai/a2 spring-2019
 
-assignment = "-{}-".format(assignment)
+ASSIGNMENT = sys.argv[1]
+DIR_NAME = sys.argv[2]
+OUTPUT_DIR = sys.argv[3]
+SEMESTER = sys.argv[4]
+
+ASSIGNMENT = "-{}-".format(ASSIGNMENT)
+
+uuids = {}
+if os.path.exists('{}/student-uuids.json'.format(OUTPUT_DIR)):
+    with open('{}/student-uuids.json'.format(OUTPUT_DIR), 'r') as f:
+        uuids = json.load(f)
+
 
 count = 0
 student = ''
 student_count = 1
 students = {}
 
-for path, dir_list, file_list in os.walk(dir_name):
+for path, dir_list, file_list in os.walk(DIR_NAME):
     for file_name in file_list:
         if file_name.endswith(".zip"):
             abs_file_path = os.path.join(path, file_name)
-            name_raw = file_name.split(assignment)[0]
+            name_raw = file_name.split(ASSIGNMENT)[0]
             last_name = name_raw.split("-")[-1]
             first_name = name_raw.split("-")[:-1]
             name_combined = "".join([last_name]+first_name)
@@ -34,30 +45,21 @@ for path, dir_list, file_list in os.walk(dir_name):
 
 
 student = ''
-student_count = 1
 for student_name, files in students.items():
-    process_files = files
+    if student_name not in uuids:
+        uuids[student_name] = str(uuid.uuid4().hex)
+    student_uuid = uuids[student_name]
+    process_files = [0]
     if len(files) > 3:
-        process_files = [files[0], files[len(files)//2], files[-1]]
+        process_files = [0, len(files)//2, len(files)-1]
     while len(process_files) < 3:
-        process_files.append(process_files[-1])
-    for sub, ele in enumerate(process_files):
-        path = ele[0]
-        file_name = ele[1]
+        process_files.append(len(files)-1)
+    for sub, file_num in enumerate(process_files):
+        path = files[file_num][0]
+        file_name = files[file_num][1]
         abs_file_path = os.path.join(path, file_name)
-        name_raw = file_name.split(assignment)[0]
-        last_name = name_raw.split("-")[-1]
-        first_name = name_raw.split("-")[:-1]
-        name_combined = "".join([last_name]+first_name)
-        if student != name_combined:
-            if student_count > 40:
-                print("{}: {}".format(student, student_count))
-            student = name_combined
-            student_count = 1
-        else:
-            student_count += 1
 
-        dt_raw = file_name.split(assignment)[1].split(".zip")[0]
+        dt_raw = file_name.split(ASSIGNMENT)[1].split(".zip")[0]
         dt = "".join(dt_raw.split("-"))
 
         with zipfile.ZipFile(abs_file_path) as zf:  # open the zip file
@@ -66,12 +68,16 @@ for student_name, files in students.items():
                     # generate the desired output name:
                     # studentname_1_datetime_assignmentpart.py
 
-                    target_name = "{}/sub{}/{}_{}_{}_{}".format(target_file.split(".")[0], sub+1, name_combined, student_count, dt, target_file)
-                    target_path = os.path.join(output_dir, target_name)  # output path
+                    target_name = "{}/{}/sub{}/{}_{}_{}_{}".format(target_file.split(".")[0], SEMESTER, sub+1, student_uuid, file_num+1, dt, target_file)
+                    target_path = os.path.join(OUTPUT_DIR, target_name)  # output path
                     # print("Target: {}".format(target_path))
-                    if not os.path.exists(os.path.join(output_dir, target_file.split(".")[0], "sub{}".format(sub+1))):
-                        os.makedirs(os.path.join(output_dir, target_file.split(".")[0], "sub{}".format(sub+1)))
+                    if not os.path.exists(os.path.join(OUTPUT_DIR, target_file.split(".")[0], SEMESTER, "sub{}".format(sub+1))):
+                        os.makedirs(os.path.join(OUTPUT_DIR, target_file.split(".")[0], SEMESTER, "sub{}".format(sub+1)))
                     with open(target_path, "wb") as f:  # open the output path for writing
                         f.write(zf.read(target_file))  # save the contents of the file in it
                     count += 1
+
+with open('{}/student-uuids.json'.format(OUTPUT_DIR), 'w') as outfile:
+    json.dump(uuids, outfile, indent=4, sort_keys=True)
+
 print(count)
