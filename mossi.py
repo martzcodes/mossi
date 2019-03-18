@@ -86,7 +86,7 @@ anon_line_refs = {}
 for assignment_part in assignment_parts:
     m = mosspy.Moss(userid, "python")
 
-    m.setIgnoreLimit(75)
+    m.setIgnoreLimit(50)
     m.setNumberOfMatchingFiles(250)  # should return 250 results
 
     for base in assignment_part['basefiles']:
@@ -231,14 +231,11 @@ for assignment_part in assignment_parts:
                         'to': int(row.text.split('-')[1])
                     }
 
-            if line_refs[0]['student'] not in anon_line_refs:
-                anon_line_refs[line_refs[0]['student']] = []
-            anon_line_refs[line_refs[0]['student']].append(line_refs)
-
             if line_refs[1]['student'] not in anon_line_refs:
-                anon_line_refs[line_refs[1]['student']] = []
-            anon_line_refs[line_refs[1]['student']].append(
-                [line_refs[1], line_refs[0]])
+                anon_line_refs[line_refs[1]['student']] = {}
+            if line_refs[0]['student'] not in anon_line_refs[line_refs[1]['student']]:
+                anon_line_refs[line_refs[1]['student']][line_refs[0]['student']] = []
+            anon_line_refs[line_refs[1]['student']][line_refs[0]['student']].append(line_refs)
 
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
