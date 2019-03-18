@@ -16,19 +16,37 @@ Install https://wkhtmltopdf.org/
 
 ## Step 1: Prep
 
-I used `<assignment>-<semester>-<year>`. Use the same convention for previous semesters work if you're comparing to those. Naming convention is only really for convenience but is used later to determine if a student is "current" or not. If your assignment has multiple files to compare, put those in a sub folder for each.
+`python bonnie.py assignment_2 ai/a2-anon ai/a2 spring-2019`
+
+Where assignment_2 is from the bonnie downloaded results for the submission zip file (e.g. studentname-assignment_2-datetimestamp)
+
+`ai/a2-anon` is where the bonnie code has been unzipped to
+
+`ai/a2` is the output folder... this will be the correct folder structure to be used in the mossi step.
+
+and `spring-2019` is the current semester (or the semester that you're using)
 
 Next, update `mossi.py` with your MOSS user id and the other stuff in the config section
 
-## Step 2: Run MOSSI
+## Step 2: Add previous semester stuff
 
-`python mossi.py`
+From Step 1 above you should have an `ai/a2` output... it will have a folder within it for each file submitted.  You can add previous semester / watermarked files in subfolders and they'll be included... e.g. `ai/a2/search_submission/watermarked/<files>`
+
+## Step 3: Run MOSSI
+
+`python mossi.py ai/a2 ai/a2-out spring-2019`
+
+Where `ai/a2` is the location of your files, including previous semesters / watermarks (from above)
+
+`ai/a2-out` is where MOSS results are locally stored and output files are placed.
+
+`spring-2019` is the current semester... it should match what you used before
 
 It may take a while to upload the files.
 
-At the end you'll get a few json files output.
+At the end you'll get a few json files output in the output directory.
 
-## Step 3: Identify students and gather evidence
+## Step 4: Identify students and gather evidence
 
 Update `evidence.json` and add studentnames (as they're formatted in the files, how they were output in the jsons) to process for evidence.
 
