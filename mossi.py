@@ -18,8 +18,7 @@ curr_semester = sys.argv[3]
 userid = -1  # insert user id here
 # End Configure
 
-# folders should be organized as assignment-semester-year/part1/<part1 files>, assignment-semester-year/part2/<part2 files>, etc
-# each part should have an object below
+# folders should be organized as assignment/<assignment_file>/semester-year/sub#/<file>, etc
 
 submission_files = {}
 assignment_files = {}
@@ -163,8 +162,8 @@ for assignment_part in assignment_parts:
 
             if row_students[0]['student'] != row_students[1]['student']:
                 for row_student in row_students:
-                    current, percent, student_uuid, student, line_match = row_student['current'], row_student[
-                        'percent'], row_student['uuid'], row_student['student'], row_student['lines']
+                    current, percent, student_uuid, line_match = row_student['current'], row_student[
+                        'percent'], row_student['student'], row_student['lines']
                     if current:
                         if student_uuid not in uuid_percents[percent]:
                             uuid_percents[percent].append(student_uuid)
@@ -255,7 +254,7 @@ for assignment_part in assignment_parts:
     with open('{}/moss-urls.json'.format(OUTPUT_DIR), 'w') as outfile:
         json.dump(moss_urls, outfile, indent=4, sort_keys=True)
 
-    with open('./polygonrobot/anon-line-refs.json', 'w') as outfile:
+    with open('{}/anon-line-refs.json'.format(OUTPUT_DIR), 'w') as outfile:
         json.dump(anon_line_refs, outfile, indent=4, sort_keys=True)
 
     with open('{}/student-anon-groups.json'.format(OUTPUT_DIR), 'w') as outfile:
