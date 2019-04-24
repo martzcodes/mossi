@@ -30,13 +30,15 @@ Next, update `mossi.py` with your MOSS user id and the other stuff in the config
 
 ## Step 2: Add previous semester stuff
 
-From Step 1 above you should have an `ai/a2` output... it will have a folder within it for each file submitted.  You can add previous semester / watermarked files in subfolders and they'll be included... e.g. `ai/a2/search_submission/watermarked/<files>`
+From Step 1 above you should have an `ai/a2` output... it will have a folder within it for each file submitted. You can add previous semester / watermarked files in subfolders and they'll be included... e.g. `ai/a2/search_submission/watermarked/<files>`
 
 ## Step 3: Run MOSSI
 
-`python mossi.py ai/a2 ai/a2-out spring-2019`
+`python run_mossi.py MOSSID ai/a2 ai/a2-out spring-2019`
 
-Where `ai/a2` is the location of your files, including previous semesters / watermarks (from above)
+Where... `MOSSID` is your unique MOSS id
+
+`ai/a2` is the location of your files, including previous semesters / watermarks (from above)
 
 `ai/a2-out` is where MOSS results are locally stored and output files are placed.
 
