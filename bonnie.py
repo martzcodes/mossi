@@ -3,6 +3,9 @@ import os
 import sys
 import uuid
 import json
+import hashlib
+from collections import defaultdict
+
 
 # python bonnie.py assignment_2 ai/a2-anon ai/a2 spring-2019
 
@@ -23,6 +26,7 @@ count = 0
 student = ''
 student_count = 1
 students = {}
+student_checksums = {}
 
 for path, dir_list, file_list in os.walk(DIR_NAME):
     for file_name in file_list:
@@ -35,8 +39,19 @@ for path, dir_list, file_list in os.walk(DIR_NAME):
             if name_combined not in students:
                 students[name_combined] = []
             students[name_combined].append((path, file_name))
+
+            if name_combined not in student_checksums:
+                student_checksums[name_combined] = []
+            student_checksum = hashlib.md5(os.path.join(path, file_name)).hexdigest() 
+            student_checksums[name_combined].append(student_checksum)
             if student != name_combined:
                 if student_count > 40:
+                    # d = defaultdict(int)
+                    # for i in student_checksums[name_combined]:
+                    #     d[i] += 1
+                    # max_same = max(d.iteritems(), key=lambda x: x[1])
+                    # print(max_same)
+                    # print("{}: {}... and submitted the same file {} times".format(student, student_count, max_same[1]))
                     print("{}: {}".format(student, student_count))
                 student = name_combined
                 student_count = 1

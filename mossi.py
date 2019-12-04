@@ -221,7 +221,7 @@ class Mossi(object):
                             'student': row_students[1]['student'],
                             'other_student': row_students[0]
                         })
-            for top_path in glob.iglob('{}/{}/{}/match*-top.html'.format(self.output_dir, assignment_part['name'], assignment_part['submission']), recursive=True):
+            for top_path in glob.iglob('{}/{}/{}/match*-top.html'.format(self.output_dir, assignment_part['name'], assignment_part['submission'])):
                 soup = BeautifulSoup(open(top_path), 'lxml')
                 line_refs = []
                 for header in soup.find_all(['th']):
